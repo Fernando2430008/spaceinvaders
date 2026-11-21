@@ -97,13 +97,12 @@ Game.prototype.moveToState = function(state) {
  
    //  If we are in a state, leave it.
    if(this.currentState() && this.currentState().leave) {
-     this.currentState().leave(game);
-     this.stateStack.pop();
+     this.currentState().leave(this);
    }
    
    //  If there's an enter function for the new state, call it.
    if(state.enter) {
-     state.enter(game);
+     state.enter(this);
    }
  
    //  Set the current state.
@@ -155,7 +154,7 @@ function GameLoop(game) {
         var dt = 1 / game.config.fps;
 
         //  Get the drawing context.
-        var ctx = this.gameCanvas.getContext("2d");
+        var ctx = game.gameCanvas.getContext("2d");
         
         //  Update if we have an update function. Also draw
         //  if we have a draw function.
@@ -172,7 +171,7 @@ Game.prototype.pushState = function(state) {
 
     //  If there's an enter function for the new state, call it.
     if(state.enter) {
-        state.enter(game);
+        state.enter(this);
     }
     //  Set the current state.
     this.stateStack.push(state);
@@ -183,12 +182,11 @@ Game.prototype.popState = function() {
     //  Leave and pop the state.
     if(this.currentState()) {
         if(this.currentState().leave) {
-            this.currentState().leave(game);
+            this.currentState().leave(this);
         }
 
         //  Set the current state.
-        this.stateStack.pop();
-    }
+       }
 };
 
 //  The stop function stops the game.
@@ -264,7 +262,7 @@ WelcomeState.prototype.draw = function(game, dt, ctx) {
     ctx.clearRect(0, 0, game.width, game.height);
 
     ctx.font="30px Arial";
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#132a24';
     ctx.textBaseline="middle"; 
     ctx.textAlign="center"; 
     ctx.fillText("Space Invaders", game.width / 2, game.height/2 - 40); 
@@ -297,10 +295,10 @@ GameOverState.prototype.draw = function(game, dt, ctx) {
     ctx.clearRect(0, 0, game.width, game.height);
 
     ctx.font="30px Arial";
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#132a24';
     ctx.textBaseline="center"; 
     ctx.textAlign="center"; 
-    ctx.fillText("Game Over!", game.width / 2, game.height/2 - 40); 
+    ctx.fillText("FIN DE LA AVENTURA", game.width / 2, game.height/2 - 40); 
     ctx.font="16px Arial";
     ctx.fillText("You scored " + game.score + " and got to level " + game.level, game.width / 2, game.height/2);
     ctx.font="16px Arial";
@@ -362,8 +360,8 @@ PlayState.prototype.enter = function(game) {
     for(var rank = 0; rank < ranks; rank++){
         for(var file = 0; file < files; file++) {
             invaders.push(new Invader(
-                (game.width / 2) + ((files/2 - file) * 200 / files),
-                (game.gameBounds.top + rank * 20),
+                (game.width / 2) + ((files/2 - file) * this.config.gameWidth * 0.75 / files),
+                (game.gameBounds.top + 25 + rank * this.config.gameHeight * 0.075),
                 rank, file, 'Invader'));
         }
     }
@@ -386,7 +384,7 @@ PlayState.prototype.update = function(game, dt) {
         this.ship.x += this.shipSpeed * dt;
     }
     if(game.pressedKeys[KEY_SPACE]) {
-        this.fireRocket();
+        this.fireRocket(game);
     }
 
     //  Keep the ship in bounds.
@@ -562,25 +560,25 @@ PlayState.prototype.draw = function(game, dt, ctx) {
     ctx.clearRect(0, 0, game.width, game.height);
     
     //  Draw ship.
-    ctx.fillStyle = '#999999';
+    ctx.fillStyle = '#132a24';
     ctx.fillRect(this.ship.x - (this.ship.width / 2), this.ship.y - (this.ship.height / 2), this.ship.width, this.ship.height);
 
     //  Draw invaders.
-    ctx.fillStyle = '#006600';
+    ctx.fillStyle = '#1d5142';
     for(var i=0; i<this.invaders.length; i++) {
         var invader = this.invaders[i];
         ctx.fillRect(invader.x - invader.width/2, invader.y - invader.height/2, invader.width, invader.height);
     }
 
     //  Draw bombs.
-    ctx.fillStyle = '#ff5555';
+    ctx.fillStyle = '#365f4c';
     for(var i=0; i<this.bombs.length; i++) {
         var bomb = this.bombs[i];
         ctx.fillRect(bomb.x - 2, bomb.y - 2, 4, 4);
     }
 
     //  Draw rockets.
-    ctx.fillStyle = '#ff0000';
+    ctx.fillStyle = '#132a24';
     for(var i=0; i<this.rockets.length; i++) {
         var rocket = this.rockets[i];
         ctx.fillRect(rocket.x, rocket.y - 2, 1, 4);
@@ -589,17 +587,17 @@ PlayState.prototype.draw = function(game, dt, ctx) {
     //  Draw info.
     var textYpos = game.gameBounds.bottom + ((game.height - game.gameBounds.bottom) / 2) + 14/2;
     ctx.font="14px Arial";
-    ctx.fillStyle = '#ffffff';
-    var info = "Lives: " + game.lives;
+    ctx.fillStyle = '#132a24';
+    var info = "Vidas: " + game.lives;
     ctx.textAlign = "left";
     ctx.fillText(info, game.gameBounds.left, textYpos);
-    info = "Score: " + game.score + ", Level: " + game.level;
+    info = "Puntos: " + game.score + ", Nivel: " + game.level;
     ctx.textAlign = "right";
     ctx.fillText(info, game.gameBounds.right, textYpos);
 
     //  If we're in debug mode, draw bounds.
     if(this.config.debugMode) {
-        ctx.strokeStyle = '#ff0000';
+        ctx.strokeStyle = '#132a24';
         ctx.strokeRect(0,0,game.width, game.height);
         ctx.strokeRect(game.gameBounds.left, game.gameBounds.top,
             game.gameBounds.right - game.gameBounds.left,
@@ -612,7 +610,7 @@ PlayState.prototype.keyDown = function(game, keyCode) {
 
     if(keyCode == KEY_SPACE) {
         //  Fire!
-        this.fireRocket();
+        this.fireRocket(game);
     }
     if(keyCode == 80) {
         //  Push the pause state.
@@ -624,7 +622,7 @@ PlayState.prototype.keyUp = function(game, keyCode) {
 
 };
 
-PlayState.prototype.fireRocket = function() {
+PlayState.prototype.fireRocket = function(game) {
     //  If we have no last rocket time, or the last rocket time 
     //  is older than the max rocket rate, we can fire.
     if(this.lastRocketTime === null || ((new Date()).valueOf() - this.lastRocketTime) > (1000 / this.rocketMaxFireRate))
@@ -656,7 +654,7 @@ PauseState.prototype.draw = function(game, dt, ctx) {
     ctx.clearRect(0, 0, game.width, game.height);
 
     ctx.font="14px Arial";
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#132a24';
     ctx.textBaseline="middle";
     ctx.textAlign="center";
     ctx.fillText("Paused", game.width / 2, game.height/2);
@@ -678,7 +676,7 @@ LevelIntroState.prototype.update = function(game, dt) {
 
     //  Update the countdown.
     if(this.countdown === undefined) {
-        this.countdown = 3; // countdown from 3 secs
+        this.countdown = 1.2; // countdown from 3 secs
     }
     this.countdown -= dt;
 
@@ -701,12 +699,12 @@ LevelIntroState.prototype.draw = function(game, dt, ctx) {
     ctx.clearRect(0, 0, game.width, game.height);
 
     ctx.font="36px Arial";
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#132a24';
     ctx.textBaseline="middle"; 
     ctx.textAlign="center"; 
     ctx.fillText("Level " + this.level, game.width / 2, game.height/2);
     ctx.font="24px Arial";
-    ctx.fillText("Ready in " + this.countdownMessage, game.width / 2, game.height/2 + 36);      
+    ctx.fillText("Listos en " + this.countdownMessage, game.width / 2, game.height/2 + 36);      
     return;
 };
 
